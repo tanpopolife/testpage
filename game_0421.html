@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>2026/4/21華語課程小遊戲</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700&display=swap');
+
+        :root {
+            --bg-color: #FFF0F5;
+            --primary-pink: #FFB6C1;
+            --hover-pink: #FF69B4;
+            --selected-purple: #BA55D3;
+            --matched-purple: #800080;
+            --text-color: #4A4A4A;
+            --card-text: #fff;
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: 'Nunito', 'Microsoft JhengHei', sans-serif;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* 頂部導航與標題 */
+        .top-nav {
+            width: 100%;
+            max-width: 600px;
+            display: flex;
+            align-items: center;
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .home-btn, .back-btn {
+            background: #fff;
+            border: 2px solid var(--primary-pink);
+            border-radius: 15px;
+            padding: 8px 12px;
+            text-decoration: none;
+            color: var(--hover-pink);
+            font-weight: bold;
+            font-size: 1.2rem;
+            cursor: pointer;
+            box-shadow: 0 4px 0px var(--primary-pink);
+            transition: all 0.1s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .home-btn:active, .back-btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 0px 0px var(--primary-pink);
+        }
+
+        h1, h2 {
+            color: var(--hover-pink);
+            text-align: center;
+            margin: 0;
+            flex-grow: 1;
+            text-shadow: 2px 2px 0px #FFF;
+        }
+
+        h1 { font-size: 1.5rem; }
+        h2 { font-size: 1.6rem; color: var(--selected-purple); }
+
+        /* 分數顯示 */
+        .score-board {
+            background: #fff;
+            padding: 10px 20px;
+            border-radius: 20px;
+            border: 3px dashed var(--hover-pink);
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: var(--hover-pink);
+            margin-bottom: 15px;
+        }
+
+        /* 頁面切換控制 */
+        .page { display: none; width: 100%; max-width: 600px; }
+        .page.active { display: flex; flex-direction: column; align-items: center; animation: fadeIn 0.4s; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- 主畫面區塊 --- */
+        /* 下拉選單 */
+        details {
+            width: 100%;
+            background: #fff;
+            border-radius: 15px;
+            border: 2px solid var(--primary-pink);
+            margin-bottom: 25px;
+            overflow: hidden;
+            box-shadow: 0 4px 10px rgba(255, 182, 193, 0.3);
+        }
+        
+        summary {
+            background: var(--primary-pink);
+            color: #fff;
+            padding: 15px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            list-style: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        summary::after {
+            content: '▼';
+            font-size: 1rem;
+            transition: transform 0.3s;
+        }
+        details[open] summary::after { transform: rotate(180deg); }
+
+        .vocab-list-content {
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .vocab-item {
+            display: flex;
+            justify-content: space-between;
+            background: var(--bg-color);
+            padding: 10px 15px;
+            border-radius: 10px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--selected-purple);
+        }
+
+        /* 遊戲選擇按鈕 */
+        .game-menu { width: 100%; display: flex; flex-direction: column; gap: 15px; }
+        .game-btn {
+            background: #fff;
+            border: 3px solid var(--primary-pink);
+            padding: 20px;
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: var(--hover-pink);
+            border-radius: 20px;
+            cursor: pointer;
+            box-shadow: 0 6px 0px var(--primary-pink);
+            transition: all 0.1s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+        .game-btn:active { transform: translateY(6px); box-shadow: 0 0px 0px var(--primary-pink); }
+
+
+        /* --- 遊戲畫面共用 --- */
+        .dog-container {
+            font-size: 3.5rem;
+            height: 70px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 10px 0 20px 0;
+            position: relative;
+        }
+        .dog { transition: all 0.3s ease; }
+        .dog-msg {
+            position: absolute;
+            font-size: 1.5rem;
+            top: -5px;
+            right: 40%;
+            opacity: 0;
+            transition: opacity 0.3s;
+            background: #fff;
+            border-radius: 50%;
+            padding: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .happy .dog { animation: jump 0.6s ease; }
+        .happy .dog-msg { opacity: 1; content: "✨"; right: 35%; }
+        .sad .dog { animation: shake 0.5s ease; }
+        .sad .dog-msg { opacity: 1; content: "💪"; }
+
+        @keyframes jump { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-15px) scale(1.1); } }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-10px) rotate(-10deg); } 75% { transform: translateX(10px) rotate(10deg); } }
+
+        /* 卡片共用樣式 */
+        .card {
+            background-color: var(--primary-pink);
+            color: #fff;
+            font-weight: bold;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 12px;
+            cursor: pointer;
+            box-shadow: 0 4px 0px #FF94A8;
+            font-size: 1.2rem;
+            transition: all 0.2s ease;
+        }
+        .card:active { transform: translateY(4px); box-shadow: 0 0px 0px #FF94A8; }
+        .card.selected {
+            background-color: var(--selected-purple);
+            box-shadow: 0 4px 0px #9932CC;
+            transform: scale(1.05);
+        }
+        .card.matched {
+            background-color: var(--matched-purple);
+            box-shadow: 0 2px 0px #4B0082;
+            cursor: default;
+            transform: translateY(2px);
+        }
+
+        /* --- 第一關：注音配對 --- */
+        .match-board {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+            background: #fff;
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 0 8px 15px rgba(255,182,193,0.3);
+        }
+        .col { display: flex; flex-direction: column; gap: 15px; width: 48%; }
+        .col .card { height: 65px; white-space: nowrap; padding: 0 10px; }
+
+        /* --- 第二關：翻牌配對 --- */
+        .memory-board {
+            width: 100%;
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            background: #fff;
+            padding: 20px 10px;
+            border-radius: 20px;
+            box-shadow: 0 8px 15px rgba(255,182,193,0.3);
+        }
+        .memory-card { aspect-ratio: 3/4; perspective: 1000px; cursor: pointer; }
+        .memory-card-inner {
+            width: 100%; height: 100%; transition: transform 0.4s;
+            transform-style: preserve-3d; position: relative;
+        }
+        .memory-card.flipped .memory-card-inner, .memory-card.matched .memory-card-inner { transform: rotateY(180deg); }
+        .memory-card-front, .memory-card-back {
+            position: absolute; width: 100%; height: 100%;
+            backface-visibility: hidden; display: flex; justify-content: center; align-items: center;
+            border-radius: 10px; font-weight: bold; font-size: clamp(0.9rem, 4vw, 1.3rem); text-align: center;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+        }
+        .memory-card-front {
+            background-color: var(--primary-pink);
+            background-image: radial-gradient(circle, rgba(255,255,255,0.4) 2px, transparent 2px);
+            background-size: 12px 12px; font-size: 1.5rem;
+        }
+        .memory-card-back {
+            background-color: #fff; color: var(--selected-purple); border: 2px solid var(--selected-purple); transform: rotateY(180deg); white-space: pre-wrap; line-height: 1.2;
+        }
+        .memory-card.matched .memory-card-back { background-color: var(--matched-purple); color: #fff; border-color: var(--matched-purple); }
+
+    </style>
+</head>
+<body>
+
+    <div class="score-board">🌟 總分: <span id="global-score">0</span></div>
+
+    <div id="main-menu" class="page active">
+        <div class="top-nav">
+            <a href="index.html" class="home-btn">🏠首頁</a>
+            <h1>2026/4/21華語課程小遊戲</h1>
+        </div>
+
+        <details>
+            <summary>📝 本次生詞與注音</summary>
+            <div class="vocab-list-content" id="vocab-list">
+                </div>
+        </details>
+
+        <div class="game-menu">
+            <button class="game-btn" onclick="startAudioAndGame('game1')">🌸 1. 注音配對</button>
+            <button class="game-btn" onclick="startAudioAndGame('game2')">🧩 2. 翻牌配對</button>
+        </div>
+    </div>
+
+    <div id="game1-page" class="page">
+        <div class="top-nav">
+            <button class="back-btn" onclick="showPage('main-menu')">⬅️返回</button>
+            <h2>注音配對</h2>
+        </div>
+        <div class="dog-container" id="dog-anim-1">
+            <div class="dog">🐶</div><div class="dog-msg" id="dog-msg-1"></div>
+        </div>
+        <div class="match-board">
+            <div id="g1-zh-col" class="col"></div>
+            <div id="g1-py-col" class="col"></div>
+        </div>
+    </div>
+
+    <div id="game2-page" class="page">
+        <div class="top-nav">
+            <button class="back-btn" onclick="showPage('main-menu')">⬅️返回</button>
+            <h2>翻牌配對</h2>
+        </div>
+        <div class="dog-container" id="dog-anim-2">
+            <div class="dog">🐶</div><div class="dog-msg" id="dog-msg-2"></div>
+        </div>
+        <div id="g2-board" class="memory-board"></div>
+    </div>
+
+    <script>
+        const vocabList = [
+            { zh: '學校', py: 'ㄒㄩㄝˊ ㄒㄧㄠˋ' },
+            { zh: '作業', py: 'ㄗㄨㄛˋ ㄧㄝˋ' },
+            { zh: '考試', py: 'ㄎㄠˇ ㄕˋ' },
+            { zh: '老師', py: 'ㄌㄠˇ ㄕ' },
+            { zh: '學生', py: 'ㄒㄩㄝˊ ㄕㄥ' }
+        ];
+
+        let globalScore = 0;
+        let audioCtx = null;
+        let activeDogTimer = null;
+
+        // 初始化選單生詞
+        const vocabContainer = document.getElementById('vocab-list');
+        vocabList.forEach(v => {
+            vocabContainer.innerHTML += `<div class="vocab-item"><span>${v.zh}</span><span>${v.py}</span></div>`;
+        });
+
+        // 頁面切換
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+        }
+
+        // 音效系統 (解決 Autoplay 問題，需由按鈕點擊觸發)
+        function startAudioAndGame(gameId) {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            
+            showPage(pageId = gameId + '-page');
+            if(gameId === 'game1') initGame1();
+            if(gameId === 'game2') initGame2();
+        }
+
+        function playSound(type) {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            if (type === 'success') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(600, audioCtx.currentTime); 
+                osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.1);
+                gain.gain.setValueAtTime(0, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.5, audioCtx.currentTime + 0.05);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                osc.start(audioCtx.currentTime);
+                osc.stop(audioCtx.currentTime + 0.3);
+            } else {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(150, audioCtx.currentTime + 0.2);
+                gain.gain.setValueAtTime(0, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.5, audioCtx.currentTime + 0.05);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
+                osc.start(audioCtx.currentTime);
+                osc.stop(audioCtx.currentTime + 0.25);
+            }
+        }
+
+        // 狗狗動畫
+        function animateDog(gameId, state) {
+            clearTimeout(activeDogTimer);
+            const container = document.getElementById(`dog-anim-${gameId}`);
+            const msg = document.getElementById(`dog-msg-${gameId}`);
+            
+            container.className = 'dog-container'; // reset
+            void container.offsetWidth; // trigger reflow
+
+            if (state === 'happy') {
+                container.classList.add('happy');
+                msg.innerText = "✨";
+            } else {
+                container.classList.add('sad');
+                msg.innerText = "加油!";
+            }
+
+            activeDogTimer = setTimeout(() => {
+                container.className = 'dog-container';
+                msg.innerText = "";
+            }, 800);
+        }
+
+        function updateScore(pts) {
+            globalScore += pts;
+            document.getElementById('global-score').innerText = globalScore;
+        }
+
+        function shuffle(array) {
+            return array.sort(() => Math.random() - 0.5);
+        }
+
+        // --- 遊戲 1 邏輯 ---
+        let g1SelZh = null, g1SelPy = null;
+        let g1MatchCount = 0;
+
+        function initGame1() {
+            g1SelZh = null; g1SelPy = null; g1MatchCount = 0;
+            const zhCol = document.getElementById('g1-zh-col');
+            const pyCol = document.getElementById('g1-py-col');
+            zhCol.innerHTML = ''; pyCol.innerHTML = '';
+
+            let zhArr = shuffle([...vocabList]);
+            let pyArr = shuffle([...vocabList]);
+
+            zhArr.forEach(v => {
+                let card = document.createElement('div');
+                card.className = 'card'; card.innerText = v.zh; card.dataset.val = v.zh; card.dataset.type = 'zh';
+                card.onclick = () => handleG1Click(card);
+                zhCol.appendChild(card);
+            });
+
+            pyArr.forEach(v => {
+                let card = document.createElement('div');
+                card.className = 'card'; card.innerText = v.py; card.dataset.val = v.zh; card.dataset.type = 'py';
+                card.onclick = () => handleG1Click(card);
+                pyCol.appendChild(card);
+            });
+        }
+
+        function handleG1Click(card) {
+            if (card.classList.contains('matched')) return;
+
+            if (card.dataset.type === 'zh') {
+                if (g1SelZh) g1SelZh.classList.remove('selected');
+                g1SelZh = card;
+            } else {
+                if (g1SelPy) g1SelPy.classList.remove('selected');
+                g1SelPy = card;
+            }
+            card.classList.add('selected');
+
+            if (g1SelZh && g1SelPy) {
+                if (g1SelZh.dataset.val === g1SelPy.dataset.val) {
+                    playSound('success'); animateDog(1, 'happy'); updateScore(10);
+                    g1SelZh.classList.replace('selected', 'matched');
+                    g1SelPy.classList.replace('selected', 'matched');
+                    g1SelZh = null; g1SelPy = null;
+                    g1MatchCount++;
+                    if(g1MatchCount === 5) setTimeout(() => alert("太棒了！完成注音配對！"), 500);
+                } else {
+                    playSound('fail'); animateDog(1, 'sad');
+                    let tempZh = g1SelZh, tempPy = g1SelPy;
+                    g1SelZh = null; g1SelPy = null;
+                    setTimeout(() => {
+                        tempZh.classList.remove('selected');
+                        tempPy.classList.remove('selected');
+                    }, 400);
+                }
+            }
+        }
+
+        // --- 遊戲 2 邏輯 ---
+        let g2Flipped = [];
+        let g2Lock = false;
+        let g2MatchCount = 0;
+
+        function initGame2() {
+            g2Flipped = []; g2Lock = false; g2MatchCount = 0;
+            const board = document.getElementById('g2-board');
+            board.innerHTML = '';
+
+            let deck = shuffle([...vocabList, ...vocabList]);
+
+            deck.forEach(v => {
+                let wrap = document.createElement('div');
+                wrap.className = 'memory-card';
+                wrap.dataset.val = v.zh;
+                wrap.innerHTML = `
+                    <div class="memory-card-inner">
+                        <div class="memory-card-front">🌸</div>
+                        <div class="memory-card-back">${v.zh}</div>
+                    </div>`;
+                wrap.onclick = () => handleG2Click(wrap);
+                board.appendChild(wrap);
+            });
+        }
+
+        function handleG2Click(card) {
+            if (g2Lock || card.classList.contains('flipped') || card.classList.contains('matched')) return;
+
+            card.classList.add('flipped');
+            g2Flipped.push(card);
+
+            if (g2Flipped.length === 2) {
+                g2Lock = true;
+                if (g2Flipped[0].dataset.val === g2Flipped[1].dataset.val) {
+                    playSound('success'); animateDog(2, 'happy'); updateScore(20);
+                    g2Flipped[0].classList.add('matched');
+                    g2Flipped[1].classList.add('matched');
+                    g2Flipped = []; g2Lock = false;
+                    g2MatchCount++;
+                    if(g2MatchCount === 5) setTimeout(() => alert("太聰明了！完成翻牌配對！"), 500);
+                } else {
+                    playSound('fail'); animateDog(2, 'sad');
+                    setTimeout(() => {
+                        g2Flipped[0].classList.remove('flipped');
+                        g2Flipped[1].classList.remove('flipped');
+                        g2Flipped = []; g2Lock = false;
+                    }, 800);
+                }
+            }
+        }
+    </script>
+</body>
+</html>
