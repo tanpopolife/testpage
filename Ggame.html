@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>2026/5/30華語課程小遊戲</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700&display=swap');
+
+        :root {
+            --bg-color: #FFF0F5;
+            --primary-pink: #FFB6C1;
+            --hover-pink: #FF69B4;
+            --selected-purple: #BA55D3;
+            --matched-purple: #800080;
+            --text-color: #4A4A4A;
+            --card-text: #fff;
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: 'Nunito', 'Microsoft JhengHei', sans-serif;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        h1 {
+            color: var(--hover-pink);
+            text-align: center;
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 0px #FFF;
+        }
+
+        /* 狗狗動畫區 */
+        .dog-container {
+            font-size: 4rem;
+            height: 80px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 10px;
+            position: relative;
+        }
+        
+        .dog {
+            transition: all 0.3s ease;
+        }
+
+        .dog-msg {
+            position: absolute;
+            font-size: 1.5rem;
+            top: -10px;
+            right: -20px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        /* 動畫 Keyframes */
+        @keyframes jump {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-20px) scale(1.1); }
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-15px) rotate(-10deg); }
+            75% { transform: translateX(15px) rotate(10deg); }
+        }
+
+        .happy .dog { animation: jump 0.6s ease; }
+        .happy .dog-msg { opacity: 1; content: "✨"; }
+        .sad .dog { animation: shake 0.5s ease; }
+        .sad .dog-msg { opacity: 1; content: "💦"; }
+
+        /* 計分板 */
+        .scoreboard {
+            background-color: #fff;
+            border: 3px dashed var(--primary-pink);
+            border-radius: 20px;
+            padding: 10px 30px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--hover-pink);
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        /* 遊戲區間共通設定 */
+        .game-section {
+            width: 100%;
+            max-width: 600px;
+            background: #fff;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 8px 15px rgba(255, 182, 193, 0.3);
+            text-align: center;
+            display: none; /* 預設隱藏，靠 JS 控制 */
+        }
+        .game-section.active {
+            display: block;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        h2 {
+            color: var(--selected-purple);
+            font-size: 1.4rem;
+            margin-top: 0;
+            margin-bottom: 20px;
+        }
+
+        /* 卡片共通樣式 */
+        .card {
+            background-color: var(--primary-pink);
+            color: var(--text-color);
+            font-weight: bold;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 0px #FF94A8;
+            font-size: 1.2rem;
+            padding: 10px;
+        }
+
+        .card:active {
+            transform: translateY(4px);
+            box-shadow: 0 0px 0px #FF94A8;
+        }
+
+        .card.selected {
+            background-color: var(--selected-purple);
+            color: #fff;
+            box-shadow: 0 4px 0px #9932CC;
+            transform: scale(1.05);
+        }
+
+        .card.matched {
+            background-color: var(--matched-purple);
+            color: #fff;
+            box-shadow: 0 2px 0px #4B0082;
+            cursor: default;
+            transform: translateY(2px);
+            opacity: 0.9;
+        }
+
+        /* 第一關：配對排版 */
+        .match-board {
+            display: flex;
+            justify-content: space-around;
+            gap: 15px;
+        }
+        .col {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            width: 45%;
+        }
+        .col .card {
+            height: 60px;
+        }
+
+        /* 第二關：翻牌排版 5x2 */
+        .memory-board {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            gap: 10px;
+        }
+        
+        .memory-card {
+            aspect-ratio: 3/4;
+            perspective: 1000px;
+            cursor: pointer;
+        }
+
+        .memory-card-inner {
+            width: 100%;
+            height: 100%;
+            transition: transform 0.4s;
+            transform-style: preserve-3d;
+            position: relative;
+        }
+
+        .memory-card.flipped .memory-card-inner,
+        .memory-card.matched .memory-card-inner {
+            transform: rotateY(180deg);
+        }
+
+        .memory-card-front, .memory-card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+        }
+
+        .memory-card-front {
+            background-color: var(--primary-pink);
+            background-image: radial-gradient(circle, rgba(255,255,255,0.3) 2px, transparent 2px);
+            background-size: 15px 15px;
+            color: white;
+            font-size: 2rem;
+        }
+
+        .memory-card-back {
+            background-color: #fff;
+            color: var(--selected-purple);
+            border: 2px solid var(--selected-purple);
+            transform: rotateY(180deg);
+        }
+
+        .memory-card.matched .memory-card-back {
+            background-color: var(--matched-purple);
+            color: #fff;
+            border: 2px solid var(--matched-purple);
+        }
+
+        /* 覆蓋層 - 用於觸發音效授權 */
+        #start-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255, 240, 245, 0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .start-btn {
+            background: var(--hover-pink);
+            color: white;
+            font-size: 2rem;
+            padding: 15px 40px;
+            border: none;
+            border-radius: 30px;
+            box-shadow: 0 5px 15px rgba(255, 105, 180, 0.4);
+            cursor: pointer;
+            font-weight: bold;
+        }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px);} to { opacity: 1; transform: translateY(0); } }
+
+        @media (max-width: 400px) {
+            .memory-card-back { font-size: 0.9rem; } /* 手機版字體微調 */
+            h1 { font-size: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="start-overlay">
+        <h1 style="font-size: 2.5rem; margin-bottom: 30px;">🌸 華語小遊戲 🌸</h1>
+        <button class="start-btn" onclick="startGame()">點我開始玩</button>
+    </div>
+
+    <h1>2026/5/30華語課程小遊戲</h1>
+    
+    <div class="dog-container" id="dog-anim">
+        <div class="dog">🐶</div>
+        <div class="dog-msg" id="dog-msg"></div>
+    </div>
+
+    <div class="scoreboard">
+        分數: <span id="score-display">0</span>
+    </div>
+
+    <div id="game1" class="game-section">
+        <h2>第一關：注音配對</h2>
+        <div class="match-board">
+            <div id="zh-col" class="col"></div>
+            <div id="bpmf-col" class="col"></div>
+        </div>
+    </div>
+
+    <div id="game2" class="game-section">
+        <h2>第二關：翻牌配對 🌟</h2>
+        <div id="memory-board" class="memory-board"></div>
+    </div>
+
+    <script>
+        // 生詞資料
+        const vocabList = [
+            { zh: '學校', bpmf: 'ㄒㄩㄝˊ ㄒㄧㄠˋ' },
+            { zh: '作業', bpmf: 'ㄗㄨㄛˋ ㄧㄝˋ' },
+            { zh: '考試', bpmf: 'ㄎㄠˇ ㄕˋ' },
+            { zh: '老師', bpmf: 'ㄌㄠˇ ㄕ' },
+            { zh: '學生', bpmf: 'ㄒㄩㄝˊ ㄕㄥ' }
+        ];
+
+        let score = 0;
+        let audioCtx = null;
+
+        // --- Web Audio API 音效系統 ---
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function playSound(type) {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            if (type === 'success') {
+                // 可愛高音 (大調和弦琶音感覺)
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(600, audioCtx.currentTime); 
+                osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.1);
+                
+                gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+                gainNode.gain.linearRampToValueAtTime(0.5, audioCtx.currentTime + 0.05);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                
+                osc.start(audioCtx.currentTime);
+                osc.stop(audioCtx.currentTime + 0.3);
+                triggerDogAnim('happy');
+            } else if (type === 'fail') {
+                // 錯誤低音 (短促的嗡嗡聲)
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(150, audioCtx.currentTime + 0.2);
+                
+                gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+                gainNode.gain.linearRampToValueAtTime(0.5, audioCtx.currentTime + 0.05);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
+                
+                osc.start(audioCtx.currentTime);
+                osc.stop(audioCtx.currentTime + 0.25);
+                triggerDogAnim('sad');
+            }
+        }
+
+        // --- 狗狗動畫控制 ---
+        const dogContainer = document.getElementById('dog-anim');
+        const dogMsg = document.getElementById('dog-msg');
+        let animTimeout;
+
+        function triggerDogAnim(state) {
+            clearTimeout(animTimeout);
+            dogContainer.className = 'dog-container'; // reset
+            
+            // 強制重繪以觸發動畫
+            void dogContainer.offsetWidth; 
+
+            if(state === 'happy') {
+                dogContainer.classList.add('happy');
+                dogMsg.innerText = "✨";
+            } else {
+                dogContainer.classList.add('sad');
+                dogMsg.innerText = "💪";
+            }
+
+            animTimeout = setTimeout(() => {
+                dogContainer.className = 'dog-container';
+                dogMsg.innerText = "";
+            }, 800);
+        }
+
+        function updateScore(points) {
+            score += points;
+            document.getElementById('score-display').innerText = score;
+        }
+
+        // 陣列洗牌工具
+        function shuffle(array) {
+            let currentIndex = array.length, randomIndex;
+            while (currentIndex != 0) {
+                randomIndex = Math.floor(Math.random() * currentIndex);
+                currentIndex--;
+                [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+            }
+            return array;
+        }
+
+        // --- 啟動遊戲 ---
+        function startGame() {
+            initAudio(); // 初始化音效引擎
+            document.getElementById('start-overlay').style.display = 'none';
+            initGame1();
+        }
+
+        // ==========================================
+        // 第一關：注音配對邏輯
+        // ==========================================
+        let g1SelectedZh = null;
+        let g1SelectedBpmf = null;
+        let g1MatchedPairs = 0;
+
+        function initGame1() {
+            document.getElementById('game1').classList.add('active');
+            const zhCol = document.getElementById('zh-col');
+            const bpmfCol = document.getElementById('bpmf-col');
+            
+            let zhList = shuffle([...vocabList]);
+            let bpmfList = shuffle([...vocabList]);
+
+            zhList.forEach(item => {
+                let div = document.createElement('div');
+                div.className = 'card';
+                div.innerText = item.zh;
+                div.dataset.word = item.zh;
+                div.dataset.type = 'zh';
+                div.onclick = () => handleG1Click(div);
+                zhCol.appendChild(div);
+            });
+
+            bpmfList.forEach(item => {
+                let div = document.createElement('div');
+                div.className = 'card';
+                div.innerText = item.bpmf;
+                div.dataset.word = item.zh; // 綁定同一個 reference word
+                div.dataset.type = 'bpmf';
+                div.onclick = () => handleG1Click(div);
+                bpmfCol.appendChild(div);
+            });
+        }
+
+        function handleG1Click(card) {
+            if (card.classList.contains('matched')) return;
+
+            // 處理選取狀態反白與互斥
+            if (card.dataset.type === 'zh') {
+                if (g1SelectedZh) g1SelectedZh.classList.remove('selected');
+                g1SelectedZh = card;
+                g1SelectedZh.classList.add('selected');
+            } else {
+                if (g1SelectedBpmf) g1SelectedBpmf.classList.remove('selected');
+                g1SelectedBpmf = card;
+                g1SelectedBpmf.classList.add('selected');
+            }
+
+            // 檢查是否兩邊都選了
+            if (g1SelectedZh && g1SelectedBpmf) {
+                const zhWord = g1SelectedZh.dataset.word;
+                const bpmfWord = g1SelectedBpmf.dataset.word;
+
+                if (zhWord === bpmfWord) {
+                    // 配對成功
+                    playSound('success');
+                    updateScore(10);
+                    
+                    g1SelectedZh.classList.remove('selected');
+                    g1SelectedBpmf.classList.remove('selected');
+                    g1SelectedZh.classList.add('matched');
+                    g1SelectedBpmf.classList.add('matched');
+                    
+                    g1SelectedZh = null;
+                    g1SelectedBpmf = null;
+                    g1MatchedPairs++;
+
+                    if (g1MatchedPairs === vocabList.length) {
+                        setTimeout(() => {
+                            document.getElementById('game1').classList.remove('active');
+                            initGame2();
+                        }, 1000);
+                    }
+                } else {
+                    // 配對失敗
+                    playSound('fail');
+                    let tempZh = g1SelectedZh;
+                    let tempBpmf = g1SelectedBpmf;
+                    g1SelectedZh = null;
+                    g1SelectedBpmf = null;
+
+                    setTimeout(() => {
+                        tempZh.classList.remove('selected');
+                        tempBpmf.classList.remove('selected');
+                    }, 400);
+                }
+            }
+        }
+
+        // ==========================================
+        // 第二關：翻牌配對邏輯
+        // ==========================================
+        let g2CardsFlipped = [];
+        let g2MatchedPairs = 0;
+        let isG2Locked = false;
+
+        function initGame2() {
+            document.getElementById('game2').classList.add('active');
+            const board = document.getElementById('memory-board');
+            
+            // 產生兩組一模一樣的生詞 (共10張卡)
+            let memoryList = shuffle([...vocabList, ...vocabList]);
+
+            memoryList.forEach((item, index) => {
+                let cardWrap = document.createElement('div');
+                cardWrap.className = 'memory-card';
+                cardWrap.dataset.word = item.zh;
+                
+                cardWrap.innerHTML = `
+                    <div class="memory-card-inner">
+                        <div class="memory-card-front">🌸</div>
+                        <div class="memory-card-back">${item.zh}</div>
+                    </div>
+                `;
+
+                cardWrap.onclick = () => handleG2Click(cardWrap);
+                board.appendChild(cardWrap);
+            });
+        }
+
+        function handleG2Click(card) {
+            if (isG2Locked) return;
+            if (card.classList.contains('flipped') || card.classList.contains('matched')) return;
+
+            card.classList.add('flipped');
+            g2CardsFlipped.push(card);
+
+            if (g2CardsFlipped.length === 2) {
+                isG2Locked = true;
+                const word1 = g2CardsFlipped[0].dataset.word;
+                const word2 = g2CardsFlipped[1].dataset.word;
+
+                if (word1 === word2) {
+                    // 配對成功
+                    playSound('success');
+                    updateScore(20); // 難度較高分數給多一點
+                    
+                    g2CardsFlipped[0].classList.add('matched');
+                    g2CardsFlipped[1].classList.add('matched');
+                    g2CardsFlipped = [];
+                    isG2Locked = false;
+                    g2MatchedPairs++;
+
+                    if(g2MatchedPairs === 5) {
+                        setTimeout(() => {
+                            alert('太棒了！你完成了所有的華語小遊戲！總分：' + score);
+                            triggerDogAnim('happy');
+                        }, 500);
+                    }
+                } else {
+                    // 配對失敗
+                    playSound('fail');
+                    setTimeout(() => {
+                        g2CardsFlipped[0].classList.remove('flipped');
+                        g2CardsFlipped[1].classList.remove('flipped');
+                        g2CardsFlipped = [];
+                        isG2Locked = false;
+                    }, 800);
+                }
+            }
+        }
+    </script>
+</body>
+</html>
