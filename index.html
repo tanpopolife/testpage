@@ -31,12 +31,12 @@
 
     <script>
         // ⚠️ 請在這裡貼上您「發布到網路」的 CSV 網址
-        const GOOGLE_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vToo6n6I9jZ2cGU5P_zX6R-Vaybo8X83EmLTNCE1iQ7b-wubRxdZDc3gwV55hfGnh3o99Xt00lTmwyf/pub?gid=0&single=true&output=csv"; 
+        const GOOGLE_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vToo6n6I9jZ2cGU5P_zX6R-Vaybo8X83EmLTNCE1iQ7b-wubRxdZDc3gwV55hfGnh3o99Xt00lTmwyf/pub?&output=csv"; 
 
         async function fetchDates() {
             try {
                 let csvText = "";
-                if(GOOGLE_SHEET_CSV_URL === "https://docs.google.com/spreadsheets/d/e/2PACX-1vToo6n6I9jZ2cGU5P_zX6R-Vaybo8X83EmLTNCE1iQ7b-wubRxdZDc3gwV55hfGnh3o99Xt00lTmwyf/pub?gid=0&single=true&output=csv") {
+                if(GOOGLE_SHEET_CSV_URL === "https://docs.google.com/spreadsheets/d/e/2PACX-1vToo6n6I9jZ2cGU5P_zX6R-Vaybo8X83EmLTNCE1iQ7b-wubRxdZDc3gwV55hfGnh3o99Xt00lTmwyf/pub?&output=csv") {
                     // 假資料測試用
                     csvText = `日期,生詞,注音\n2026/04/21,學校,ㄒㄩㄝˊ ㄒㄧㄠˋ\n2026/04/28,蘋果,ㄆㄧㄥˊ ㄍㄨㄛˇ`;
                 } else {
